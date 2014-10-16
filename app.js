@@ -83,6 +83,9 @@ app.post('/event', events.create);
 app.del('/events', events.delete);
 app.put('/events', events.update);
 
+
+app.get('/sessionFinder/:id',users.sfinder);
+
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
     var err = new Error('Not Found');

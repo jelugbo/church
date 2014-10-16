@@ -82,6 +82,24 @@ function(err, doc) { // Using RegEx - search is case insensitive
       
 }
 
+exports.sfinder = function(req, res) {
+     
+
+     var id = req.params.id; // The id of the user the user you want to look up.
+  user.findById(id, function(err, doc) {
+    if(!err && doc) {
+      //res.json(200, doc);
+       res.json(200, { message: "valid session" });
+    } else if(err) {
+      res.json(500, { message: "Error loading session"});
+    } else {
+      res.json(404, { message: "session not found."});
+    }
+  });
+
+      
+}
+
 
 
 exports.show = function(req, res) {
