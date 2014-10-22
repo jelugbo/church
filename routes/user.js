@@ -1,4 +1,6 @@
 var user = require('../models/user').user;
+var nodemailer = require('nodemailer');
+var cc = require('coupon-code');
       
 exports.index = function(req, res) {
   user.find({}, function(err, docs) {
@@ -10,6 +12,69 @@ exports.index = function(req, res) {
   });
 }
 
+// Email Handler
+     var sendMail= function(emailAddress ,username ,verificationCode) {
+
+        var nodemailer = require('nodemailer');
+
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'no.reply.harrisconsult@gmail.com',
+                pass: 'hconsult120'
+            }
+        });
+
+        var mailContent = {
+            from: 'no.reply.harrisconsult@gmail.com',
+            to: emailAddress,
+            subject: 'Email Verification',
+            text: 'Your Email has been successfully been created',
+            html: 'Hello ' + username + ' , <br/> your Verification code is <strong>'+ verificationCode +'</strong>.'
+        };
+
+        transporter.sendMail( mailContent, function(error, info){
+            if(error){
+                console.log(error);
+            }else{
+                console.log('Message sent: ' + info.response);
+            }
+        });
+
+      };
+
+    var sendMail_resetCode= function(emailAddress ,username ,resetCode) {
+
+        var nodemailer = require('nodemailer');
+
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'no.reply.harrisconsult@gmail.com',
+                pass: 'hconsult120'
+            }
+        });
+
+        var mailContent = {
+            from: 'no.reply.harrisconsult@gmail.com',
+            to: emailAddress,
+            subject: 'password Reset Code',
+            text: 'Your password reset code',
+            html: 'Hello ' + username + ' , <br/> The code to reset your password is <strong>'+ resetCode +'</strong>.'
+        };
+
+        transporter.sendMail( mailContent, function(error, info){
+            if(error){
+                console.log(error);
+            }else{
+                console.log('Message sent: ' + info.response);
+            }
+        });
+
+      };
+
+ 
+
 
 exports.create = function(req, res) {
       
@@ -17,6 +82,7 @@ exports.create = function(req, res) {
   var user_last_name = req.body.user_last_name; // Last name of the user
   var user_email_address = req.body.user_email_address; 
   var user_password = req.body.user_password;
+  var verificationCode = cc.generate({ parts : 2 });
 
 user.findOne({ email_address: { $regex: new RegExp(user_email_address, "i") } },
 function(err, doc) { // Using RegEx - search is case insensitive
@@ -28,13 +94,16 @@ function(err, doc) { // Using RegEx - search is case insensitive
       newuser.last_name = user_last_name;
       newuser.email_address = user_email_address;
       newuser.password = user_password;
+      newuser.resetCode =  cc.generate({ parts : 2 });
+      newuser.verificationCode = verificationCode;
+
       
       newuser.save(function(err) {
-      
+       
         if(!err) {
           res.json(201, {message: "user created with email_address: " +
 newuser.email_address });
-
+          sendMail(user_email_address , user_first_name , verificationCode);
 
         } else {
           res.json(500, {message: "Could not create user. Error: " + err});
@@ -47,7 +116,7 @@ newuser.email_address });
       // User is trying to create a user with a name that
       // already exists.
       res.json(403, {message: "user with that email address already exists, please update instead of create or create a new user with a different email address."});
-      
+   
     } else {
       res.json(500, { message: err});
     }
@@ -56,18 +125,28 @@ newuser.email_address });
 }
 
 
+
 exports.auth = function(req, res) {
       
   var user_email_address = req.body.user_email_address; 
   var user_password = req.body.user_password;
-console.log ('user_email_address is ' + user_email_address);
-console.log ('user_password is ' + user_password);
+
+
+
 user.findOne({ email_address: user_email_address , password: user_password},
 function(err, doc) { // Using RegEx - search is case insensitive
 
-
  if(!err && doc) {
+
+      var myState = true ;
+      if (myState === doc.vstate)
+      {
       res.json(200, doc.id);
+      }
+      else
+        {
+          res.json(203, { message: "user not verified"});
+        }
       //res.cookie(doc.id , req.param.name).send ('TOKEN: ' + doc.id);
 
     } else if(err) {
@@ -116,7 +195,27 @@ exports.show = function(req, res) {
   });
 }
 
+exports.userByEmail = function(req, res) {
+  
+  var user_email_address = req.params.emailAddress; // The id of the user the user you want to look up.
+  user.findOne({email_address: user_email_address}, function(err, doc) {
+    if(!err && doc) {
 
+      var newuser = new user();
+      
+      newuser.first_name = doc.first_name;
+      newuser.last_name = doc.last_name;
+      newuser.email_address = doc.email_address;
+
+      res.json(200, newuser);
+
+    } else if(err) {
+      res.json(500, { message: "Error loading user." + err});
+    } else {
+      res.json(404, { message: "user not found."});
+    }
+  });
+}
 
 
 exports.delete = function(req, res) {
@@ -162,6 +261,140 @@ err});
         res.json(404, { message: "Could not find user."});
       } else {
         res.json(500, { message: "Could not update user. " +
+err});
+      }
+    });
+}
+
+
+exports.verify = function(req, res) {
+  
+  var user_email_address = req.body.user_email_address; 
+  var user_verificationCode = req.body.user_verificationCode;
+
+  console.log(user_verificationCode);
+     user.findOne({email_address: user_email_address, verificationCode: user_verificationCode }, function(err, doc) {
+   // user.findOne({ email_address: user_email_address , verificationCode: user_verificationCode},
+   // function(err, doc) {
+      if(!err && doc) { 
+
+        doc.vstate = true;
+        
+        doc.save(function(err) {
+          if(!err) {
+            console.log(doc);
+            res.json(200, {message: "email is verified"});
+            console.log(doc);
+
+          } else {
+            res.json(500, {message: "Could not verify email address " + user_email_address + ". Try again later."  , user_name: doc.first_name});
+          }
+        });
+      } else if(!err) {
+        res.json(404, { message: "Could not find user."});
+      } else {
+        res.json(500, { message: "Could not verify email address " + user_email_address + ". "  +
+err});
+      }
+    });
+}
+
+exports.ResendVerificationCode = function(req, res) {
+  
+  var user_email_address = req.body.user_email_address; 
+  
+ 
+     user.findOne({email_address: user_email_address }, function(err, doc) {
+   // user.findOne({ email_address: user_email_address , verificationCode: user_verificationCode},
+   // function(err, doc) {
+      if(!err && doc) { 
+
+        doc.vstate = false;
+        var newVerificationCode = cc.generate({ parts : 2 });
+        doc.verificationCode =newVerificationCode;
+    
+        doc.save(function(err) {
+          if(!err) {
+            sendMail(user_email_address , doc.first_name , doc.verificationCode);
+            res.json(200, {message: "verification code sent successfully"});
+            console.log(doc);
+
+          } else {
+            res.json(500, {message: "Could not send the verification code to the email address " + user_email_address + ". Try again later."  , user_name: doc.first_name});
+          }
+        });
+      } else if(!err) {
+        res.json(404, { message: "Could not find user."});
+      } else {
+        res.json(500, { message: "Could not verify email address " + user_email_address + ". "  +
+err});
+      }
+    });
+}
+
+
+
+
+exports.ResetPassCode = function(req, res) {
+  
+  var user_email_address = req.body.user_email_address; 
+  
+ 
+     user.findOne({email_address: user_email_address }, function(err, doc) {
+   // user.findOne({ email_address: user_email_address , verificationCode: user_verificationCode},
+   // function(err, doc) {
+      if(!err && doc) { 
+
+        var newResetCode = cc.generate({ parts : 2 });
+        doc.resetCode =newResetCode;
+    
+        doc.save(function(err) {
+          if(!err) {
+            sendMail_resetCode(user_email_address , doc.first_name , doc.resetCode);
+            res.json(200, {message: "pass code sent successfully"});
+            console.log(doc);
+
+          } else {
+            res.json(500, {message: "Could not send the pass code to the email address " + user_email_address + ". Try again later."  , user_name: doc.first_name});
+          }
+        });
+      } else if(!err) {
+        res.json(404, { message: "Could not find user."});
+      } else {
+        res.json(500, { message: "Could not verify email address " + user_email_address + ". "  +
+err});
+      }
+    });
+}
+
+exports.changepassword = function(req, res) {
+  
+  var user_email_address = req.body.user_email_address; 
+  var user_newPassword = req.body.user_newPassword;
+  var user_resetCode = req.body.user_resetCode;
+  
+ 
+     user.findOne({email_address: user_email_address, resetCode:user_resetCode }, function(err, doc) {
+   // user.findOne({ email_address: user_email_address , verificationCode: user_verificationCode},
+   // function(err, doc) {
+      if(!err && doc) { 
+
+        doc.password =user_newPassword;
+    
+        doc.save(function(err) {
+          if(!err) {
+            //sendMail_resetCode(user_email_address , doc.first_name , doc.resetCode);
+            res.json(200, {message: "Password reset was successfully"});
+            console.log(doc);
+
+          } else {
+            res.json(500, {message: "could not reset the password to the  email address " + user_email_address + ". Try again later."  , user_name: doc.first_name});
+          }
+        });
+      } else if(!err) {
+        res.json(404, { message: "Could not find user."});
+      } else {
+        res.json(500, { message: "Could not verify email address " + user_email_address + ". "  +
 err});
       }
     });
