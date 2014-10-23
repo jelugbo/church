@@ -16,9 +16,13 @@ exports.create = function(req, res) {
   var event_event_name = req.body.event_event_name; // First name of event.
   var event_venue = req.body.event_venue; // Last name of the event
   var event_date = req.body.event_date; 
+  var event_description1 = req.body.event_description1;
+  var event_description2 = req.body.event_description2;
+  var event_description3 = req.body.event_description3;
+  var event_enquiryContact = req.body.event_enquiryContact;
   var event_time = req.body.event_time;
-  var event_material_image = req.body.event_material_image;
-  var event_material_video = req.body.event_material_video;
+  // var event_material_image = req.body.event_material_image;
+  // var event_material_video = req.body.event_material_video;
 
 // event.findOne({ date: { $regex: new RegExp(event_date, "i") } },
   event.findOne({ date: event_date },
@@ -31,8 +35,13 @@ function(err, doc) { // Using RegEx - search is case insensitive
       newevent.venue = event_venue;
       newevent.date = event_date;
       newevent.time = event_time;
-      newevent.material.image = event_material_image;
-      newevent.material.video = event_material_video;
+      newevent.description1 = event_description1;
+      newevent.description2 = event_description2;
+      newevent.description3 = event_description3;
+      newevent.enquiryContact = event_enquiryContact;
+      
+      // newevent.material.image = event_material_image;
+      // newevent.material.video = event_material_video;
 
       newevent.save(function(err) {
       

@@ -27,23 +27,10 @@ app.use(cors());
 
 //var app = express();
 
-// configure upload middleware
-    upload.configure({
-        uploadDir: __dirname + '/public/uploads',
-        uploadUrl: '/uploads',
-        imageVersions: {
-            thumbnail: {
-                width: 80,
-                height: 80
-            }
-        }
-    });
 
+
+// Data Manipulations
 mongoose.connection.close();
-// mongoose2.connection.close();
-
- // mongoose.model('./models/event')
-// mongoose2.connect('mongodb://localhost/event');
 var options = {
   db: { native_parser: true },
   server: { poolSize: 5 },
@@ -51,11 +38,18 @@ var options = {
   user: 'mecs',
   pass: 'mecs'
 }
+var uri ='mongodb://127.0.0.1:27017/ChurchApp'; //,mongodb://localhost/event
 
- var uri ='mongodb://127.0.0.1:27017/ChurchApp'; //,mongodb://localhost/event
-// mongoose.connect(uri);
+if ('development'==app.get('env')){
+    app.use(express.errorHandler());
+    mongoose.connect(uri );
+}
 
-// mongoose.connect('mongodb://localhost/user');
+
+mongoose.connection.once('connected', function() {
+  console.log("Connected to database")
+});
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -72,15 +66,7 @@ app.use(app.router);
 app.use('/upload', upload.fileHandler());
 
 
-if ('development'==app.get('env')){
-    app.use(express.errorHandler());
-    mongoose.connect(uri );
-}
-// app.model('/users',funcion())
 
-mongoose.connection.once('connected', function() {
-  console.log("Connected to database")
-});
 
 app.get('/', routes.index);
 // app.get('/users', users.list);
@@ -109,6 +95,21 @@ app.put('/events', events.update);
 
 app.get('/sessionFinder/:id',users.sfinder);
 
+
+
+
+
+// configure upload middleware
+    upload.configure({
+        uploadDir: __dirname + '/public/uploads',
+        uploadUrl: '/uploads',
+        imageVersions: {
+            thumbnail: {
+                width: 80,
+                height: 80
+            }
+        }
+    });
 
 
 upload.configure({
