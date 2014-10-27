@@ -16,6 +16,7 @@ exports.create = function(req, res) {
   var event_event_name = req.body.event_event_name; // First name of event.
   var event_venue = req.body.event_venue; // Last name of the event
   var event_date = req.body.event_date; 
+  var event_imageURl = req.body.event_imageURl; 
   var event_description1 = req.body.event_description1;
   var event_description2 = req.body.event_description2;
   var event_description3 = req.body.event_description3;
@@ -34,6 +35,7 @@ function(err, doc) { // Using RegEx - search is case insensitive
       newevent.event_name = event_event_name;
       newevent.venue = event_venue;
       newevent.date = event_date;
+      newevent.imageURl = event_imageURl;
       newevent.time = event_time;
       newevent.description1 = event_description1;
       newevent.description2 = event_description2;

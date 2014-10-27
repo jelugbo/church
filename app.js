@@ -28,6 +28,17 @@ app.use(cors());
 //var app = express();
 
 
+  upload.configure({
+        uploadDir: __dirname + '/public/uploads',
+        uploadUrl: '/uploads',
+        imageVersions: {
+            thumbnail: {
+                width: 80,
+                height: 80
+            }
+        }
+    });
+
 
 // Data Manipulations
 mongoose.connection.close();
@@ -100,22 +111,13 @@ app.get('/sessionFinder/:id',users.sfinder);
 
 
 // configure upload middleware
-    upload.configure({
-        uploadDir: __dirname + '/public/uploads',
-        uploadUrl: '/uploads',
-        imageVersions: {
-            thumbnail: {
-                width: 80,
-                height: 80
-            }
-        }
-    });
+  
 
 
-upload.configure({
-    uploadDir: __dirname + '/public/uploads/',
-    uploadUrl: '/uploads'
-});
+// upload.configure({
+//     uploadDir: __dirname + '/public/uploads/',
+//     uploadUrl: '/uploads'
+// });
 
 /// Redirect all to home except post
 app.get('/upload', function( req, res ){
@@ -123,7 +125,7 @@ app.get('/upload', function( req, res ){
 });
 
 // app.post('/upload', function( req, res ){
-//     //res.redirect('/');
+//     res.redirect('/');
 // });
 
 app.put('/upload', function( req, res ){
